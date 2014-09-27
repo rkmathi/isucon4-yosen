@@ -18,7 +18,7 @@ else
   execute("zip -r /home/isucon/webapp_back/#{Time.now.to_i}.zip /home/isucon/webapp")
   execute("rm -rf /home/isucon/webapp")
   execute("mkdir -p /root/.ssh; cp /home/isucon/.ssh/id_rsa /root/.ssh")
-  execute("cd /home/isucon; git clone git@github.com:rkmathi/isucon4-yosen /home/isucon/webapp")
+  execute("cd /home/isucon; git clone --depth 1 git@github.com:rkmathi/isucon4-yosen /home/isucon/webapp")
 end
 
 execute("cd /home/isucon/webapp/ruby; /home/isucon/env.sh bundle install")
