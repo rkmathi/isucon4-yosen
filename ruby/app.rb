@@ -1,3 +1,11 @@
+def production?
+  ENV["RACK_ENV"] == "production"
+end
+
+def development?
+  !production?
+end
+
 require 'sinatra/base'
 require 'digest/sha2'
 require 'mysql2-cs-bind'
@@ -6,6 +14,10 @@ require 'json'
 require 'slim'
 require 'redis'
 require 'singleton'
+
+if development?
+  require 'rack-lineprof'
+end
 
 class FragmentStore
   include Singleton
@@ -48,6 +60,10 @@ module Isucon4
     use Rack::Session::Cookie, secret: ENV['ISU4_SESSION_SECRET'] || 'shirokane'
     use Rack::Flash
     set :public_folder, File.expand_path('../../public', __FILE__)
+
+    if development?
+      use Rack::Lineprof, profile: "app.rb"
+    end
 
     helpers do
       def config
@@ -225,5 +241,7 @@ module Isucon4
         locked_users: locked_users,
       }.to_json
     end
+
+    run! if development?
   end
 end
