@@ -106,6 +106,19 @@ module Isucon4
           end
         end
 
+        ip_str = request.ip.gsub('.', '_')
+        ip_cache_key = "ip_ban_#{ip_str}"
+        if succeeded
+          fragment_store.redis.set(ip_cache_key, 0)
+        else
+          ip_now_lock = fragment_store.redis.get(ip_cache_key).to_i
+          if ip_now_lock < 1
+            fragment_store.redis.set(ip_cache_key, 1)
+          else
+            fragment_store.redis.set(ip_cache_key, ip_now_lock+1)
+          end
+        end
+
         fragment_store.purge("last_login_#{user_id}")
         fragment_store.purge("user_locked_#{user_id}")
       end
@@ -123,9 +136,11 @@ module Isucon4
       end
 
       def ip_banned?
-        log = db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE ip = ? AND id > IFNULL((select id from login_log where ip = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", request.ip, request.ip).first
+        ip_str = request.ip.gsub('.', '_')
+        ban = fragment_store.redis.get("ip_ban_#{ip_str}").to_i
+        #log = db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE ip = ? AND id > IFNULL((select id from login_log where ip = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", request.ip, request.ip).first
 
-        config[:ip_ban_threshold] <= log['failures']
+        config[:ip_ban_threshold] <= ban #log['failures']
       end
 
       def attempt_login(login, password)
