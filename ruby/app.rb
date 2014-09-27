@@ -14,6 +14,7 @@ require 'json'
 require 'slim'
 require 'redis'
 require 'singleton'
+require 'timeout'
 
 if development?
   require 'rack-lineprof'
@@ -256,19 +257,8 @@ module Isucon4
     end
 
     get '/report' do
-      begin
-        timeout(1) do
-          # これは全部実行したいから先にやる
-          (1..200000).each do |user_id|
-            fragment_store.purge("user_locked_#{user_id}")
-          end
-
-          users = db.xquery('SELECT * FROM users')
-          users.each do |user|
-            fragment_store.update("attempt_login_#{user['login']}", user)
-          end
-        end
-      rescue
+      (1..200000).each do |user_id|
+        fragment_store.purge("user_locked_#{user_id}")
       end
 
       send_file 'report.json', type: :json
