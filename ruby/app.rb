@@ -129,7 +129,7 @@ module Isucon4
       end
 
       def attempt_login(login, password)
-        user = fragment_store.cache("attempt_login_#{login}") do # no need to purge
+        user = fragment_store.cache("attempt_login_#{login}") do # only use cached by /report
           db.xquery('SELECT * FROM users WHERE login = ?', login).first
         end
 
@@ -256,12 +256,22 @@ module Isucon4
     end
 
     get '/report' do
-      (1..200000).each do |user_id|
-        fragment_store.purge("user_locked_#{user_id}")
-        # user_locked?({ 'id' => user_id })
+      begin
+        timeout(1) do
+          # これは全部実行したいから先にやる
+          (1..200000).each do |user_id|
+            fragment_store.purge("user_locked_#{user_id}")
+          end
+
+          users = db.xquery('SELECT * FROM users')
+          users.each do |user|
+            fragment_store.update("attempt_login_#{user['login']}", user)
+          end
+        end
+      rescue
       end
 
-      send_file 'report', type: :json
+      send_file 'report.json', type: :json
     end
 
     run! if development?
