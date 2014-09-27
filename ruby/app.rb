@@ -192,22 +192,6 @@ module Isucon4
       slim :index
     end
 
-    get '/ch_wrong_password' do
-      slim :index
-    end
-
-    get '/ch_you_must_be_logged_in' do
-      slim :index
-    end
-
-    get '/ch_locked' do
-      slim :index
-    end
-
-    get '/ch_banned' do
-      slim :index
-    end
-
     post '/login' do
       user, err = attempt_login(params[:login], params[:password])
       if user
@@ -222,14 +206,14 @@ module Isucon4
         else
           flash[:notice] = "Wrong username or password"
         end
-        redirect "/ch_#{err}"
+        redirect "/?flash_msg=#{err}"
       end
     end
 
     get '/mypage' do
       unless current_user
         flash[:notice] = "You must be logged in"
-        redirect "/ch_you_must_be_logged_in"
+        redirect "/?flash_msg=you_must_be_logged_in"
       end
       slim :mypage
     end
