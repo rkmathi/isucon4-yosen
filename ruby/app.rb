@@ -254,10 +254,10 @@ module Isucon4
     end
 
     get '/report' do
-      (1..200000).each do |user_id|
-        fragment_store.purge("user_locked_#{user_id}")
-        # user_locked?({ 'id' => user_id })
-      end
+      # (1..200000).each do |user_id|
+      #   fragment_store.purge("user_locked_#{user_id}")
+      #   # user_locked?({ 'id' => user_id })
+      # end
 
       send_file 'report', type: :json
     end
