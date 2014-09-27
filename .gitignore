@@ -4,3 +4,4 @@ perl/*
 python/*
 php/*
 *.swp
+*.tar

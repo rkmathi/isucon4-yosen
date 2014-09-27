@@ -1,6 +1,20 @@
-git "/home/isucon/webapp" do
-  repository "git@github.com:rkmathi/isucon4-yosen"
-  user "isucon"
+if ENV["LOCAL_DEPLOY"] == "true"
+  system("rm -f app.tar; tar cvf app.tar deploy.rb bench.rb public ruby")
+
+  execute("rm -rf /home/isucon/webapp")
+  execute("mkdir /home/isucon/webapp")
+
+  template "/home/isucon/webapp/app.tar" do
+    action :create
+    source "app.tar"
+  end
+
+  execute("cd /home/isucon/webapp; tar xvf /home/isucon/webapp/app.tar")
+  execute("rm /home/isucon/webapp/app.tar")
+else
+  execute("rm -rf /home/isucon/webapp")
+  execute("mkdir -p /root/.ssh; cp /home/isucon/.ssh/id_rsa /root/.ssh")
+  execute("cd /home/isucon; git clone git@github.com:rkmathi/isucon4-yosen /home/isucon/webapp")
 end
 
 execute("cd /home/isucon/webapp/ruby; /home/isucon/env.sh bundle install")
