@@ -1,2 +1,1 @@
-worker_processes 10
-preload_app true
+/home/isucon/bootstrap/isucon4y/unicorn_config.rb
