@@ -130,7 +130,7 @@ module Isucon4
       end
 
       def attempt_login(login, password)
-        user = fragment_store.cache("attempt_login_#{login}") do # only use cached by /report
+        user = fragment_store.cache("attempt_login_#{login}") do
           db.xquery('SELECT * FROM users WHERE login = ?', login).first
         end
 
