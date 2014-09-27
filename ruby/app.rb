@@ -129,7 +129,9 @@ module Isucon4
       end
 
       def attempt_login(login, password)
-        user = db.xquery('SELECT * FROM users WHERE login = ?', login).first
+        user = fragment_store.cache("attempt_login_#{login}") do # no need to purge
+          db.xquery('SELECT * FROM users WHERE login = ?', login).first
+        end
 
         if ip_banned?
           login_log(false, login, user ? user['id'] : nil)
