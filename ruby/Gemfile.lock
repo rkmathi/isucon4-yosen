@@ -18,6 +18,7 @@ GEM
     rack-protection (1.5.3)
       rack
     raindrops (0.13.0)
+    redis (3.1.0)
     sinatra (1.4.5)
       rack (~> 1.4)
       rack-protection (~> 1.4)
@@ -41,6 +42,7 @@ DEPENDENCIES
   mysql2-cs-bind
   newrelic_rpm
   rack-flash3
+  redis
   sinatra
   slim
   unicorn

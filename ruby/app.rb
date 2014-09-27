@@ -4,6 +4,44 @@ require 'mysql2-cs-bind'
 require 'rack-flash'
 require 'json'
 require 'slim'
+require 'redis'
+require 'singleton'
+
+class FragmentStore
+  include Singleton
+
+  def cache(key, &block)
+    cached = redis.get(key)
+    if cached
+      Marshal.load(cached)
+    else
+      update(key, block.call)
+    end
+  end
+
+  def update(key, value)
+    redis.set(key, Marshal.dump(value))
+    value
+  end
+
+  def purge(key)
+    redis.del(key)
+  end
+
+  def increment(key)
+    redis.incr(key)
+  end
+
+  def decrement(key)
+    redis.decr(key)
+  end
+
+  private
+
+  def redis
+    @redis ||= Redis.new
+  end
+end
 
 module Isucon4
   class App < Sinatra::Base
@@ -83,7 +121,11 @@ module Isucon4
         return @current_user if @current_user
         return nil unless session[:user_id]
 
-        @current_user = db.xquery('SELECT * FROM users WHERE id = ?', session[:user_id].to_i).first
+        user_id = session[:user_id].to_i
+        @current_user = fragment_store.cache("current_user_#{user_id}") do
+          db.xquery('SELECT * FROM users WHERE id = ?', session[:user_id].to_i).first
+        end
+
         unless @current_user
           session[:user_id] = nil
           return nil
@@ -136,6 +178,10 @@ module Isucon4
         end
 
         user_ids
+      end
+
+      def fragment_store
+        @fragment_store ||= FragmentStore.instance
       end
     end
 
