@@ -14,6 +14,7 @@ require 'json'
 require 'slim'
 require 'redis'
 require 'singleton'
+require 'timeout'
 
 if development?
   require 'rack-lineprof'
@@ -129,7 +130,9 @@ module Isucon4
       end
 
       def attempt_login(login, password)
-        user = db.xquery('SELECT * FROM users WHERE login = ?', login).first
+        user = fragment_store.cache("attempt_login_#{login}") do
+          db.xquery('SELECT * FROM users WHERE login = ?', login).first
+        end
 
         if ip_banned?
           login_log(false, login, user ? user['id'] : nil)
@@ -256,10 +259,9 @@ module Isucon4
     get '/report' do
       (1..200000).each do |user_id|
         fragment_store.purge("user_locked_#{user_id}")
-        # user_locked?({ 'id' => user_id })
       end
 
-      send_file 'report', type: :json
+      send_file 'report.json', type: :json
     end
 
     run! if development?
