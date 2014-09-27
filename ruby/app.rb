@@ -3,6 +3,7 @@ require 'digest/sha2'
 require 'mysql2-cs-bind'
 require 'rack-flash'
 require 'json'
+require 'slim'
 
 module Isucon4
   class App < Sinatra::Base
@@ -139,7 +140,7 @@ module Isucon4
     end
 
     get '/' do
-      erb :index
+      slim :index
     end
 
     post '/login' do
@@ -165,7 +166,7 @@ module Isucon4
         flash[:notice] = "You must be logged in"
         redirect '/'
       end
-      erb :mypage
+      slim :mypage
     end
 
     get '/report' do
