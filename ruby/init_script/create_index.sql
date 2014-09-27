@@ -1,0 +1,1 @@
+CREATE INDEX idx_ip ON login_log (ip);
