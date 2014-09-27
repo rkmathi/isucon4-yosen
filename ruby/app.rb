@@ -239,6 +239,10 @@ module Isucon4
     end
 
     get '/report' do
+      (1..200000).each do |user_id|
+        fragment_store.purge("user_locked_#{user_id}")
+      end
+
       content_type :json
       {
         banned_ips: banned_ips,
