@@ -244,11 +244,7 @@ module Isucon4
         # user_locked?({ 'id' => user_id })
       end
 
-      content_type :json
-      {
-        banned_ips: banned_ips,
-        locked_users: locked_users,
-      }.to_json
+      send_file 'report', type: :json
     end
 
     run! if development?
