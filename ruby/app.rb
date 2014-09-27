@@ -77,6 +77,7 @@ module Isucon4
                   " (`created_at`, `user_id`, `login`, `ip`, `succeeded`)" \
                   " VALUES (?,?,?,?,?)",
                  Time.now, user_id, login, request.ip, succeeded ? 1 : 0)
+        fragment_store.purge("last_login_#{user_id}")
       end
 
       def user_locked?(user)
@@ -137,7 +138,9 @@ module Isucon4
       def last_login
         return nil unless current_user
 
-        db.xquery('SELECT * FROM login_log WHERE succeeded = 1 AND user_id = ? ORDER BY id DESC LIMIT 2', current_user['id']).each.last
+        @last_login ||= fragment_store.cache("last_login_#{current_user['id']}") do
+          db.xquery('SELECT * FROM login_log WHERE succeeded = 1 AND user_id = ? ORDER BY id DESC LIMIT 2', current_user['id']).each.last
+        end
       end
 
       def banned_ips
