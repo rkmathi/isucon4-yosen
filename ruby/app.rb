@@ -156,14 +156,14 @@ module Isucon4
         else
           flash[:notice] = "Wrong username or password"
         end
-        redirect '/'
+        redirect "/?flash_msg=#{err}"
       end
     end
 
     get '/mypage' do
       unless current_user
         flash[:notice] = "You must be logged in"
-        redirect '/'
+        redirect "/?flash_msg=you_must_be_logged_in"
       end
       erb :mypage
     end
