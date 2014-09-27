@@ -94,11 +94,15 @@ module Isucon4
                   " VALUES (?,?,?,?,?)",
                  Time.now, user_id, login, request.ip, succeeded ? 1 : 0)
         fragment_store.purge("last_login_#{user_id}")
+        fragment_store.purge("user_locked_#{user_id}")
       end
 
       def user_locked?(user)
         return nil unless user
-        log = db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE user_id = ? AND id > IFNULL((select id from login_log where user_id = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", user['id'], user['id']).first
+
+        log = fragment_store.cache("user_locked_#{user['id']}") do
+          db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE user_id = ? AND id > IFNULL((select id from login_log where user_id = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", user['id'], user['id']).first
+        end
 
         config[:user_lock_threshold] <= log['failures']
       end
@@ -235,6 +239,11 @@ module Isucon4
     end
 
     get '/report' do
+      (1..200000).each do |user_id|
+        fragment_store.purge("user_locked_#{user_id}")
+        # user_locked?({ 'id' => user_id })
+      end
+
       content_type :json
       {
         banned_ips: banned_ips,
