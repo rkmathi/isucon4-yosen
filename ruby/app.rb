@@ -48,6 +48,8 @@ class FragmentStore
     redis.decr(key)
   end
 
+  private
+
   def redis
     @redis ||= Redis.new
   end
@@ -91,21 +93,6 @@ module Isucon4
                   " (`created_at`, `user_id`, `login`, `ip`, `succeeded`)" \
                   " VALUES (?,?,?,?,?)",
                  Time.now, user_id, login, request.ip, succeeded ? 1 : 0)
-
-        if user_id
-          cache_key = "user_locked_status_#{user_id}"
-          if succeeded
-            fragment_store.redis.set(cache_key, 0)
-          else
-            now_lock = fragment_store.redis.get(cache_key).to_i
-            if now_lock < 1
-              fragment_store.redis.set(cache_key, 1)
-            else
-              fragment_store.redis.set(cache_key, now_lock+1)
-            end
-          end
-        end
-
         fragment_store.purge("last_login_#{user_id}")
         fragment_store.purge("user_locked_#{user_id}")
       end
@@ -113,13 +100,11 @@ module Isucon4
       def user_locked?(user)
         return nil unless user
 
-        lock = fragment_store.redis.get("user_locked_status_#{user['id']}").to_i
+        log = fragment_store.cache("user_locked_#{user['id']}") do
+          db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE user_id = ? AND id > IFNULL((select id from login_log where user_id = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", user['id'], user['id']).first
+        end
 
-        #log = fragment_store.cache("user_locked_#{user['id']}") do
-        #  db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE user_id = ? AND id > IFNULL((select id from login_log where user_id = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", user['id'], user['id']).first
-        #end
-
-        config[:user_lock_threshold] <= lock
+        config[:user_lock_threshold] <= log['failures']
       end
 
       def ip_banned?
