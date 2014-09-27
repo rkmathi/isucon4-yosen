@@ -11,6 +11,8 @@ if ENV["LOCAL_DEPLOY"] == "true"
 
   execute("cd /home/isucon/webapp; tar xvf /home/isucon/webapp/app.tar")
   execute("rm /home/isucon/webapp/app.tar")
+  execute("mkdir -p /home/isucon/webapp/ruby/tmp")
+  execute("mkdir -p /home/isucon/webapp/ruby/log")
 else
   execute("mkdir -p /home/isucon/webapp_back")
   execute("zip -r /home/isucon/webapp_back/#{Time.now.to_i}.zip /home/isucon/webapp")
