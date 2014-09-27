@@ -3,3 +3,4 @@ node/*
 perl/*
 python/*
 php/*
+*.swp
