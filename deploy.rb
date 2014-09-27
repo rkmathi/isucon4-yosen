@@ -1,13 +1,13 @@
 if ENV["LOCAL_DEPLOY"] == "true"
-  # system("rm -f app.tar; tar cvf app.tar deploy.rb bench.rb public ruby")
+  system("rm -f app.tar; tar cvf app.tar deploy.rb bench.rb public ruby")
 
-  # execute("rm -rf /home/isucon/webapp")
-  # execute("mkdir /home/isucon/webapp")
+  execute("rm -rf /home/isucon/webapp")
+  execute("mkdir /home/isucon/webapp")
 
-  # template "/home/isucon/webapp/app.tar" do
-  #   action :create
-  #   source "app.tar"
-  # end
+  template "/home/isucon/webapp/app.tar" do
+    action :create
+    source "app.tar"
+  end
 
   execute("cd /home/isucon/webapp; tar xvf /home/isucon/webapp/app.tar")
   execute("rm /home/isucon/webapp/app.tar")
