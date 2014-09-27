@@ -3,7 +3,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `login` varchar(255) NOT NULL UNIQUE,
   `password_hash` varchar(255) NOT NULL,
   `salt` varchar(255) NOT NULL,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `idx_login` (`login`)
 ) DEFAULT CHARSET=utf8 ENGINE=MEMORY;
 
@@ -14,7 +13,8 @@ CREATE TABLE IF NOT EXISTS `login_log` (
   `login` varchar(255) NOT NULL,
   `ip` varchar(255) NOT NULL,
   `succeeded` tinyint NOT NULL,
-  PRIMARY KEY (`id`),
   KEY `idx_ip` (`ip`),
-  UNIQUE KEY `idx_user_id_succeeded_id` (`user_id`,`succeeded`,`id`)
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_user_id_succeeded` (`user_id`,`succeeded`),
+  KEY `idx_succeeded` (`succeeded`)
 ) DEFAULT CHARSET=utf8 ENGINE=MEMORY;

@@ -224,7 +224,7 @@ module Isucon4
         last_succeeds = db.xquery('SELECT user_id, login, MAX(id) AS last_login_id FROM login_log WHERE user_id IS NOT NULL AND succeeded = 1 GROUP BY user_id')
 
         last_succeeds.each do |row|
-          count = db.xquery('SELECT COUNT(1) AS cnt FROM login_log WHERE user_id = ? AND ? < id', row['user_id'], row['last_login_id']).first['cnt']
+          count = db.xquery('SELECT COUNT(1) AS cnt FROM login_log USE INDEX (idx_user_id_succeeded, PRIMARY) WHERE user_id = ? AND ? < id', row['user_id'], row['last_login_id']).first['cnt']
           if threshold <= count
             user_ids << row['login']
           end

@@ -13,3 +13,5 @@ mysql -h ${myhost} -P ${myport} -u ${myuser} ${mydb} < sql/dummy_users.sql
 mysql -h ${myhost} -P ${myport} -u ${myuser} ${mydb} < sql/dummy_log.sql
 # mysql -h ${myhost} -P ${myport} -u ${myuser} ${mydb} < /home/isucon/webapp/ruby/init_script/create_index.sql
 redis-cli FLUSHALL
+
+# max_heap_table_size = 1G を my.cnf に
