@@ -3,4 +3,5 @@ git "/home/isucon/webapp" do
   user "isucon"
 end
 
+execute("cd /home/isucon/webapp/ruby; /home/isucon/env.sh bundle install")
 execute("supervisorctl restart isucon_ruby")
