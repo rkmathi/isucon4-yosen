@@ -1,3 +1,11 @@
+def production?
+  ENV["RACK_ENV"] == "production"
+end
+
+def development?
+  !production?
+end
+
 require 'sinatra/base'
 require 'digest/sha2'
 require 'mysql2-cs-bind'
@@ -225,5 +233,7 @@ module Isucon4
         locked_users: locked_users,
       }.to_json
     end
+
+    run! unless production?
   end
 end
