@@ -94,7 +94,7 @@ module Isucon4
                   " VALUES (?,?,?,?,?)",
                  Time.now, user_id, login, request.ip, succeeded ? 1 : 0)
         fragment_store.purge("last_login_#{user_id}")
-        fragment_store.cache("user_locked_#{user_id}")
+        fragment_store.purge("user_locked_#{user_id}")
       end
 
       def user_locked?(user)
