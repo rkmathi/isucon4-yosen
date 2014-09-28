@@ -44,6 +44,28 @@ class FragmentStore
     redis.incr(key)
   end
 
+  def atomic_increment(key)
+    begin
+      result = redis.watch(key) do
+        if block_given?
+          val = redis.get(key).to_i
+          if yield(val)
+            redis.multi do |m|
+              m.incr(key)
+            end
+          else
+            true
+          end
+        else
+          redis.multi do |m|
+            m.incr(key)
+          end
+        end
+      end
+    end while !result
+    result.is_a?(Array) ? result.first : false
+  end
+
   def decrement(key)
     redis.decr(key)
   end
@@ -97,12 +119,7 @@ module Isucon4
           if succeeded
             fragment_store.redis.set(cache_key, 0)
           else
-            now_lock = fragment_store.redis.get(cache_key).to_i
-            if now_lock < 1
-              fragment_store.redis.set(cache_key, 1)
-            else
-              fragment_store.redis.set(cache_key, now_lock+1)
-            end
+            fragment_store.atomic_increment(cache_key)
           end
         end
 
@@ -111,12 +128,7 @@ module Isucon4
         if succeeded
           fragment_store.redis.set(ip_cache_key, 0)
         else
-          ip_now_lock = fragment_store.redis.get(ip_cache_key).to_i
-          if ip_now_lock < 1
-            fragment_store.redis.set(ip_cache_key, 1)
-          else
-            fragment_store.redis.set(ip_cache_key, ip_now_lock+1)
-          end
+          fragment_store.atomic_increment(ip_cache_key)
         end
 
         fragment_store.purge("last_login_#{user_id}")
