@@ -244,11 +244,15 @@ module Isucon4
 
         ips.concat not_succeeded.each.map { |r| r['ip'] }
 
-        last_succeeds = db.xquery('SELECT ip, MAX(id) AS last_login_id FROM login_log WHERE succeeded = 1 GROUP by ip')
+        last_succeeds = db.xquery(<<-EOS)
+          SELECT login_log.ip AS ip, COUNT(login_log.id) AS count
+          FROM login_log, (SELECT ip, MAX(id) AS last_login_id FROM login_log WHERE succeeded = 1 GROUP BY ip) AS t
+          WHERE t.ip = login_log.ip AND t.last_login_id < login_log.id
+          GROUP BY login_log.ip
+        EOS
 
         last_succeeds.each do |row|
-          count = db.xquery('SELECT COUNT(1) AS cnt FROM login_log WHERE ip = ? AND ? < id', row['ip'], row['last_login_id']).first['cnt']
-          if threshold <= count
+          if threshold <= row['count']
             ips << row['ip']
           end
         end
