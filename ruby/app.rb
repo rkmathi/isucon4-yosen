@@ -71,7 +71,41 @@ class FragmentStore
   end
 
   def redis
-    @redis ||= Redis.new
+    @redis ||= Redis.new(host: '127.0.0.1', db: 0)
+  end
+end
+
+class UserStore
+  include Singleton
+
+  def login(user: u, password: pw)
+    h = find_by_user(u)
+    return nil unless h
+    if Digest::SHA256.hexdigest "#{pw}:#{salt}" == h[:hash]
+      return h.merge(login: true)
+    else
+      return h.merge(login: false)
+    end
+  end
+
+  def find_by_user(user)
+    val = redis.get(user)
+    return nil unless val
+    id, pwh, salt = val.split(':')
+    {
+      id: id,
+      user: user,
+      hash: pwh,
+      salt: salt,
+    }
+  end
+
+  def set(id: nil, user: nil, hash: nil, salt: nil)
+    redis.set(user, "#{id}:#{hash}:#{salt}")
+  end
+
+  def redis
+    @redis ||= Redis.new(host: '127.0.0.1', db: 1)
   end
 end
 
@@ -138,7 +172,7 @@ module Isucon4
       def user_locked?(user)
         return nil unless user
 
-        lock = fragment_store.redis.get("user_locked_status_#{user['id']}").to_i
+        lock = fragment_store.redis.get("user_locked_status_#{user[:id]}").to_i
 
         #log = fragment_store.cache("user_locked_#{user['id']}") do
         #  db.xquery("SELECT COUNT(1) AS failures FROM login_log WHERE user_id = ? AND id > IFNULL((select id from login_log where user_id = ? AND succeeded = 1 ORDER BY id DESC LIMIT 1), 0);", user['id'], user['id']).first
@@ -156,23 +190,23 @@ module Isucon4
       end
 
       def attempt_login(login, password)
-        user = db.xquery('SELECT * FROM users WHERE login = ?', login).first
+        user = user_store.login(user: login, password: password)
 
         if ip_banned?
-          login_log(false, login, user ? user['id'] : nil)
+          login_log(false, login, user ? user[:id] : nil)
           return [nil, :banned]
         end
 
         if user_locked?(user)
-          login_log(false, login, user['id'])
+          login_log(false, login, user[:id])
           return [nil, :locked]
         end
 
-        if user && calculate_password_hash(password, user['salt']) == user['password_hash']
-          login_log(true, login, user['id'])
+        if user && user[:login]
+          login_log(true, login, user[:id])
           [user, nil]
         elsif user
-          login_log(false, login, user['id'])
+          login_log(false, login, user[:id])
           [nil, :wrong_password]
         else
           login_log(false, login)
@@ -182,15 +216,12 @@ module Isucon4
 
       def current_user
         return @current_user if @current_user
-        return nil unless session[:user_id]
+        return nil unless session[:user]
 
-        user_id = session[:user_id].to_i
-        @current_user = fragment_store.cache("current_user_#{user_id}") do
-          db.xquery('SELECT * FROM users WHERE id = ?', session[:user_id].to_i).first
-        end
+        @current_user = user_store.find_by_user(session[:user])
 
         unless @current_user
-          session[:user_id] = nil
+          session[:user] = nil
           return nil
         end
 
@@ -200,8 +231,8 @@ module Isucon4
       def last_login
         return nil unless current_user
 
-        @last_login ||= fragment_store.cache("last_login_#{current_user['id']}") do
-          db.xquery('SELECT * FROM login_log WHERE succeeded = 1 AND user_id = ? ORDER BY id DESC LIMIT 2', current_user['id']).each.last
+        @last_login ||= fragment_store.cache("last_login_#{current_user[:id]}") do
+          db.xquery('SELECT * FROM login_log WHERE succeeded = 1 AND user_id = ? ORDER BY id DESC LIMIT 2', current_user[:id]).each.last
         end
       end
 
@@ -248,6 +279,10 @@ module Isucon4
       def fragment_store
         @fragment_store ||= FragmentStore.instance
       end
+
+      def user_store
+        @user_store ||= UserStore.instance
+      end
     end
 
     get '/' do
@@ -256,8 +291,8 @@ module Isucon4
 
     post '/login' do
       user, err = attempt_login(params[:login], params[:password])
-      if user
-        session[:user_id] = user['id']
+      unless err
+        session[:user] = user[:user]
         redirect '/mypage'
       else
         case err
@@ -278,6 +313,20 @@ module Isucon4
         redirect "/?flash_msg=you_must_be_logged_in"
       end
       slim :mypage
+    end
+
+    get '/initializer' do
+      all_users = db.xquery('SELECT * FROM users')
+      all_users.each do |user|
+        user_store.set(
+          id: user['id'],
+          user: user['login'],
+          hash: user['password_hash'],
+          salt: user['salt']
+        )
+      end
+
+      "OK"
     end
 
     get '/report' do

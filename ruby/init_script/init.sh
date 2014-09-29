@@ -15,3 +15,5 @@ mysql -h ${myhost} -P ${myport} -u ${myuser} ${mydb} < sql/dummy_log.sql
 redis-cli FLUSHALL
 
 # max_heap_table_size = 1G を my.cnf に
+
+curl 'http://127.0.0.1/initializer'
