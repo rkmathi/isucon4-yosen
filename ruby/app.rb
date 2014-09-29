@@ -78,10 +78,10 @@ end
 class UserStore
   include Singleton
 
-  def login(user: u, password: pw)
-    h = find_by_user(u)
+  def login(user: nil, password: nil)
+    h = find_by_user(user)
     return nil unless h
-    if Digest::SHA256.hexdigest "#{pw}:#{salt}" == h[:hash]
+    if Digest::SHA256.hexdigest "#{password}:#{salt}" == h[:hash]
       return h.merge(login: true)
     else
       return h.merge(login: false)
