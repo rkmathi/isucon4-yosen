@@ -81,7 +81,7 @@ class UserStore
   def login(user: nil, password: nil)
     h = find_by_user(user)
     return nil unless h
-    if Digest::SHA256.hexdigest "#{password}:#{salt}" == h[:hash]
+    if Digest::SHA256.hexdigest("#{password}:#{h[:salt]}") == h[:hash]
       return h.merge(login: true)
     else
       return h.merge(login: false)
